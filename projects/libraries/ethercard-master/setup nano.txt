@@ -1,0 +1,18 @@
+setup working with 12-pin enc28j60 
+
+
+  Configuration:
+    IDE: 1.0.6
+    Library: ethercard (https://codeload.github.com/jcw/ethercard/zip/master)
+    Sketch: Examples/ethercard/backSoon
+    Arduino: Duemilanove
+    12 Pins ENC28J60 Module: HanRun HR911105A 14/10 (module.jpg)
+    Power Supply (power_supply_1.jpg and power_supply_2.jpg)
+  Wiring:                                                                            
+Arduino	     	Module
+digital 12	     SO
+digital 11	     ST
+digital 13	     SCK
+digital 8	     CS
+5V	     5V
+Gnd	     GND
