@@ -1,6 +1,7 @@
 
 //variables
 // constants won't change:
+const int RainSensor = A0;  //rain sensor
 const int outPins[] = { 5, 6, 7, 8, 9, 10, 11, 12};       // an array of output Pins, D2,...
 int outStates[] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW}; //array of output pins states
 const int pinCount = 8;           // the number of pins (i.e. the length of the array)
@@ -24,8 +25,11 @@ void SetAllOff()
   delay(100);
 }
 //--------------------------------
+
 void setup() {
   // put your setup code here, to run once:
+  //input pin(s)
+  pinMode(RainSensor, INPUT);
   // use a for loop to initialize each pin as an output:
   for (int thisPin = 0; thisPin < pinCount; thisPin++) 
   {
@@ -39,23 +43,29 @@ void loop() {
   unsigned long currentMillis = millis();
   static int thisPin = 0; //current pin
 
-  if (currentMillis - previousMillis >= interval) 
+  //rain sensor DO: high - no rain, low - rain
+  if(RainSensor == HIGH) //no rain, normal work - iterate
   {
-    // save the last time you blinked the LED
-    previousMillis = currentMillis;
-
-    //evaluate current pin state
-    if(outStates[thisPin] == LOW) outStates[thisPin] = HIGH;
-    else outStates[thisPin] = LOW;
-    
-    //set all outPins OFF
-    SetAllOff();
-    // turn thisPin ON:
-    digitalWrite(outPins[thisPin], outStates[thisPin]);
-    delay(50);
-
-    //evaluate thisPin value
-    if(thisPin >= pinCount) thisPin = 0; //reset to zero
-    else thisPin++;  //increment
+    //check elapsed time 
+    if (currentMillis - previousMillis >= interval) 
+    {
+      // save the last time you blinked the LED
+      previousMillis = currentMillis;
+  
+      //evaluate current pin state
+      if(outStates[thisPin] == LOW) outStates[thisPin] = HIGH;
+      else outStates[thisPin] = LOW;
+      
+      //set all outPins OFF
+      SetAllOff();
+      // turn thisPin ON:
+      digitalWrite(outPins[thisPin], outStates[thisPin]);
+      delay(50);
+  
+      //evaluate thisPin value
+      if(thisPin >= pinCount) thisPin = 0; //reset to zero
+      else thisPin++;  //increment
+    }
+    else thisPin = 0; //rain, do nothing
   }
 }
