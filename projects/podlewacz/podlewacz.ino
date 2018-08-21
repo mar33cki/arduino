@@ -1,3 +1,6 @@
+#define SECOND 1000UL
+#define MINUTE (SECOND * 60UL)
+#define HOUR (MINUTE * 60UL)
 
 //variables
 // constants won't change:
@@ -11,8 +14,8 @@ const int pinCount = 8;           // the number of pins (i.e. the length of the 
 unsigned long previousMillis = 0;        // will store last time outPin was updated
 
 // interval at which to switch state (milliseconds)
-const unsigned long interval = 6000;   //1min: 1min * 60s * 1000ms = 6 000 ms
-//const unsigned long interval = 1800000;   //30min: 30min * 60s * 1000ms = 1 800 000 ms
+const unsigned long interval = 1;   //1 [minute]
+//const unsigned long interval = 30;   //30 [minute]
 
 //--------------------------------
 // set all declared outPins to OFF state
@@ -47,7 +50,7 @@ void loop() {
   if(RainSensor == HIGH) //no rain, normal work - iterate
   {
     //check elapsed time 
-    if (currentMillis - previousMillis >= interval) 
+    if (currentMillis - previousMillis >= interval*MINUTE) 
     {
       // save the last time you blinked the LED
       previousMillis = currentMillis;
