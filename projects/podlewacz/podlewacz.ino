@@ -52,22 +52,23 @@ void setup() {
   }
   SetAllOff();
   //set 1st output ON
-  digitalWrite(outPins[0], outStates[0]);
-  delay(50);
-  Serial.print(F("outPin[0] : "));  Serial.print(outPins[0]); Serial.print(F(" : ")); Serial.println(outStates[0]);
+//  digitalWrite(outPins[0], outStates[0]);
+//  delay(50);
+//  Serial.print(F("outPin[0] : "));  Serial.print(outPins[0]); Serial.print(F(" : ")); Serial.println(outStates[0]);
 }
 //--------------------------------
 void loop() 
 {
   // put your main code here, to run repeatedly:
   unsigned long currentMillis = millis();
-  static int thisPin = 1; //current pin, pin 0 already ON in setup
+  static int thisPin = 0; //current pin
+  int UpdateStates = 0;
 
   //rain sensor DO: high - no rain, low - rain
   RainSensor = digitalRead(RainSensorPin);
   Serial.print(F("RainSensor: ")); Serial.println(RainSensor);
-  if(RainSensor == HIGH) //no rain, normal work - iterate
-  //if(RainSensor == LOW) //no rain, normal work - iterate
+  //if(RainSensor == HIGH) //no rain, normal work - iterate
+  if(RainSensor == LOW) //no rain, emulate work - iterate
   {
     //check elapsed time 
     Serial.print(F("Millis: ")); Serial.print(currentMillis - previousMillis); Serial.print(F("; interval: ")); Serial.println(interval*MINUTE);
@@ -75,7 +76,11 @@ void loop()
     {
       // save the last time you blinked the LED
       previousMillis = currentMillis;
-  
+      UpdateStates = 1;
+      //Serial.print(F("UpdateStates: ")); Serial.println(UpdateStates);
+    }
+    if (thisPin == 0 || UpdateStates == 1)
+    {
       //evaluate current pin state
       if(outStates[thisPin] == LOW) outStates[thisPin] = HIGH;
       else outStates[thisPin] = LOW;
@@ -86,11 +91,14 @@ void loop()
       digitalWrite(outPins[thisPin], outStates[thisPin]);
       delay(50);
       Serial.print(F("outPin[")); Serial.print(thisPin);Serial.print(F("] : "));  Serial.print(outPins[thisPin]); Serial.print(F(" : ")); Serial.println(outStates[thisPin]);
-  
+     
+      UpdateStates = 0;
+      
       //evaluate thisPin value
       if(thisPin >= pinCount) thisPin = 0; //reset to zero
       else thisPin++;  //increment
       Serial.print(F("thisPin: ")); Serial.println(thisPin);
+     
     }
   }
   else thisPin = 0; //rain, do nothing
