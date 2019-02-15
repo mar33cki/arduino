@@ -1,0 +1,180 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+//#include <DHT.h>
+//#include <Adafruit_BMP085.h>
+
+#define LED_BUILTIN D4
+#define D0 16
+#define D1 5 // I2C Bus SCL (clock)
+#define D2 4 // I2C Bus SDA (data)
+#define D3 0
+#define D4 2 // Same as "LED_BUILTIN", but inverted logic
+#define D5 14 // SPI Bus SCK (clock)
+#define D6 12 // SPI Bus MISO
+#define D7 13 // SPI Bus MOSI
+#define D8 15 // SPI Bus SS (CS)
+#define D9 3 // RX0 (Serial console)
+#define D10 1 // TX0 (Serial console)
+
+#define ssid      "Averna Guest"       // WiFi SSID
+#define password  "Averna2.0WelcomeU"  // WiFi password
+//#define DHTTYPE   DHT22       // DHT type (DHT11, DHT22)
+//#define DHTPIN    D4          // Broche du DHT / DHT Pin
+#define LEDPIN    LED_BUILTIN          // Led
+float   t = 0 ;
+float   h = 0 ;
+float   p = 0;
+int  Distance;  // Odległość w centymetrach
+String  stateLed = "OFF";
+//sonar
+int Trig = D1;   // Numer pinu wyzwolenia
+int Echo = D2;   // Numer pinu odpowiedzi
+
+// Création des objets / create Objects
+//DHT dht(DHTPIN, DHTTYPE);
+//Adafruit_BMP085 bmp;
+ESP8266WebServer server ( 80 );
+
+String getPage()
+{
+  String page = "<html lang=en-EN><head><meta http-equiv='refresh' content='10'/>";
+  page += "<title>ESP8266 Demo - www.projetsdiy.fr</title>";
+  page += "<style> body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }</style>";
+  page += "</head><body><h1>ESP8266 Demo</h1>";
+//  page += "<h3>DHT22</h3>";
+//  page += "<ul><li>Temperature : ";
+//  page += t;
+//  page += "°C</li>";
+//  page += "<li>Humidite : ";
+//  page += h;
+//  page += "%</li></ul><h3>BMP180</h3>";
+//  page += "<ul><li>Pression atmospherique : ";
+//  page += p;
+//  page += " mbar</li></ul>";
+  page += "<h3>Sonar</h3>";
+  page += "<ul><li>Distance : ";
+  page += Distance;
+  page += " cm</li></ul>";
+  page += "<h3>GPIO</h3>";
+  page += "<form action='/' method='POST'>";
+  page += "<ul><li>D3 (state: ";
+  page += stateLed;
+  page += ")";
+  page += "<INPUT type='radio' name='LED' value='1'>ON";
+  page += "<INPUT type='radio' name='LED' value='0'>OFF</li></ul>";
+  page += "<INPUT type='submit' value='Update State'>";
+  page += "<br><br><p><a hrf='https://diyprojects.io'>diyprojects.io</p>";
+  page += "</body></html>";
+  return page;
+}
+void handleRoot(){ 
+  if ( server.hasArg("LED") ) 
+  {
+    handleSubmit();
+  } 
+  else 
+  {
+    Distance = MeasureDistanceAvg();
+    server.send ( 200, "text/html", getPage() );
+  }  
+}
+
+void handleSubmit() {
+  // Actualise le GPIO / Update GPIO 
+  String LEDValue;
+  LEDValue = server.arg("LED");
+  Serial.print("Set GPIO: "); Serial.println(LEDValue);
+  if ( LEDValue == "1" ) {
+    digitalWrite(LEDPIN, 1);
+    stateLed = "On";
+    server.send ( 200, "text/html", getPage() );
+  } else if ( LEDValue == "0" ) {
+    digitalWrite(LEDPIN, 0);
+    stateLed = "Off";
+    server.send ( 200, "text/html", getPage() );
+  } else {
+    Serial.println("Err Led Value");
+  }
+}
+
+//-------------------------------------------
+// takes few measurements, returns average
+int MeasureDistanceAvg()
+{
+  int DistanceAvg = 0;
+  int samples = 5;
+  
+  for(int i=0; i<samples; i++) 
+  {
+     DistanceAvg = DistanceAvg + MeasureDistance();     
+  }
+  DistanceAvg = DistanceAvg/ samples;
+  Serial.print(F("Distance [cm]: ")); Serial.println(DistanceAvg);
+  return DistanceAvg;
+}
+//-------------------------------------------
+// Measure single distance in [cm]
+int MeasureDistance()
+{
+  int dist; //odleglosc w cm
+  long EchoTime;  // Czas trwania sygnału ECHO
+ // Ustawiamy TRIG w stan niski na 2us
+  digitalWrite(Trig, LOW);
+  delayMicroseconds(2);
+ 
+  // Ustawiamy TRIG w stan wysoki na 10us
+  digitalWrite(Trig, HIGH);
+  delayMicroseconds(10);
+ 
+  // Ustawiamy TRIG w stan niski - rozpoczynamy pomiar
+  digitalWrite(Trig, LOW);
+ 
+  // Odczytujamy czas trwania stanu wysokiego na pinie ECHO
+  EchoTime = pulseIn(Echo, HIGH);
+ 
+  // Obliczamy odległość
+  dist = EchoTime / 58;
+  return dist;
+}
+
+void setup() {
+  Serial.begin ( 115200 );
+  
+  pinMode(Trig, OUTPUT);
+  pinMode(Echo, INPUT);
+  // Initialisation du BMP180 / Init BMP180
+//  if ( !bmp.begin() ) {
+//    Serial.println("BMP180 KO!");
+//    while(1);
+//  } else {
+//    Serial.println("BMP180 OK");
+//  }
+  
+  pinMode(LEDPIN, OUTPUT); 
+  WiFi.begin ( ssid, password );
+  // Attente de la connexion au réseau WiFi / Wait for connection
+  while ( WiFi.status() != WL_CONNECTED ) {
+    delay ( 500 ); Serial.print ( "." );
+  }
+  // Connexion WiFi établie / WiFi connexion is OK
+  Serial.println ( "" ); 
+  Serial.print ( "Connected to " ); Serial.println ( ssid );
+  Serial.print ( "IP address: " ); Serial.println ( WiFi.localIP() );
+
+  // On branche la fonction qui gère la premiere page / link to the function that manage launch page 
+  server.on ( "/", handleRoot );
+
+  server.begin();
+  Serial.println ( "HTTP server started" );
+  
+}
+
+void loop() {
+  server.handleClient();
+  
+//  t = dht.readTemperature();
+//  h = dht.readHumidity();
+//  p = bmp.readPressure() / 100.0F;
+  delay(1000);
+}
