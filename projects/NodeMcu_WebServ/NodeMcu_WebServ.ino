@@ -17,8 +17,8 @@
 #define D9 3 // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
-#define ssid      "Averna Guest"       // WiFi SSID
-#define password  "Averna2.0WelcomeU"  // WiFi password
+#define ssid      "xx"       // WiFi SSID
+#define password  "xxx"  // WiFi password
 //#define DHTTYPE   DHT22       // DHT type (DHT11, DHT22)
 //#define DHTPIN    D4          // Broche du DHT / DHT Pin
 #define LEDPIN    LED_BUILTIN          // Led
