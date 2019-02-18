@@ -17,8 +17,8 @@
 #define D9 3 // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
-#define ssid      "xx"       // WiFi SSID
-#define password  "xxx"  // WiFi password
+#define ssid      "ssid"       // WiFi SSID
+#define password  "pass"  // WiFi password
 //#define DHTTYPE   DHT22       // DHT type (DHT11, DHT22)
 //#define DHTPIN    D4          // Broche du DHT / DHT Pin
 #define LEDPIN    LED_BUILTIN          // Led
@@ -154,8 +154,12 @@ void setup() {
   pinMode(LEDPIN, OUTPUT); 
   WiFi.begin ( ssid, password );
   // Attente de la connexion au réseau WiFi / Wait for connection
-  while ( WiFi.status() != WL_CONNECTED ) {
-    delay ( 500 ); Serial.print ( "." );
+  while ( WiFi.status() != WL_CONNECTED ) 
+  {
+    digitalWrite(LEDPIN, HIGH);
+    delay ( 500 ); 
+    digitalWrite(LEDPIN, LOW);
+    Serial.print ( "." );
   }
   // Connexion WiFi établie / WiFi connexion is OK
   Serial.println ( "" ); 
