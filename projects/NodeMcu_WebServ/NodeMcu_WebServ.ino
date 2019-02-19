@@ -152,6 +152,11 @@ void setup() {
 //  }
   
   pinMode(LEDPIN, OUTPUT); 
+  
+  /* Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
+     would try to act as both a client and an access-point and could cause
+     network-issues with your other WiFi-devices on your WiFi-network. */
+  WiFi.mode(WIFI_STA);  
   WiFi.begin ( ssid, password );
   // Attente de la connexion au réseau WiFi / Wait for connection
   while ( WiFi.status() != WL_CONNECTED ) 
@@ -162,15 +167,15 @@ void setup() {
     Serial.print ( "." );
   }
   // Connexion WiFi établie / WiFi connexion is OK
-  Serial.println ( "" ); 
-  Serial.print ( "Connected to " ); Serial.println ( ssid );
-  Serial.print ( "IP address: " ); Serial.println ( WiFi.localIP() );
+  Serial.println ( F("") ); 
+  Serial.print ( F("Connected to ") ); Serial.println ( ssid );
+  Serial.print ( F("IP address: ") ); Serial.println ( WiFi.localIP() );
 
   // On branche la fonction qui gère la premiere page / link to the function that manage launch page 
   server.on ( "/", handleRoot );
 
   server.begin();
-  Serial.println ( "HTTP server started" );
+  Serial.println ( F("HTTP server started") );
   
 }
 
