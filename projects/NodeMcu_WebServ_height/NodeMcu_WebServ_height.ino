@@ -203,7 +203,7 @@ void loop() {
   server.handleClient();
 
   Distance = MeasureDistanceAvg();
-  if(Distance > 30)  //turn valve ON
+  if(Distance > 32)  //turn valve ON
   {
     digitalWrite(Valve1, LOW);
     digitalWrite(Valve2, LOW);
@@ -211,7 +211,7 @@ void loop() {
     Valve2State = 0;
     Serial.print ( F("Distance > 30, Valves ON : ") ); Serial.print(Valve1State); Serial.print ( F(" : ") ); Serial.println(Valve2State);
   }
-  else  //turn valve OFF
+  else if(Distance < 30)  //turn valve OFF
   {
     digitalWrite(Valve1, HIGH);
     digitalWrite(Valve2, HIGH);
@@ -223,5 +223,5 @@ void loop() {
 //  t = dht.readTemperature();
 //  h = dht.readHumidity();
 //  p = bmp.readPressure() / 100.0F;
-  delay(1000);
+  delay(100);
 }
