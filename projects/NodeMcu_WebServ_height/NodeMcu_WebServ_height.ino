@@ -28,8 +28,11 @@ float   p = 0;
 int  Distance;  // Odległość w centymetrach
 String  stateLed = "OFF";
 //sonar
-int Trig = D1;   // Numer pinu wyzwolenia
-int Echo = D2;   // Numer pinu odpowiedzi
+int Trig = D0;   // Numer pinu wyzwolenia
+int Echo = D1;   // Numer pinu odpowiedzi
+int Valve1 = D2;  // electro valve 1
+int Valve2 = D3;  // electro valve 2
+int Valve1State = 0, Valve2State = 0;
 
 // Création des objets / create Objects
 //DHT dht(DHTPIN, DHTTYPE);
@@ -56,6 +59,16 @@ String getPage()
   page += "<ul><li>Distance : ";
   page += Distance;
   page += " cm</li></ul>";
+  page += "<ul><li>Valve 1 : ";
+  if(!Valve1State) page += " ON"; // 0 means ON
+  else page += " OFF";  // 1 means OFF
+  //page += Valve1State;
+  page += "</li></ul>";
+  page += "<ul><li>Valve 2 : ";
+  if(!Valve2State) page += " ON";  // 0 means ON
+  else page += " OFF";  // 1 means OFF
+  //page += Valve2State;
+  page += "</li></ul>";
   page += "<h3>GPIO</h3>";
   page += "<form action='/' method='POST'>";
   page += "<ul><li>D3 (state: ";
@@ -75,7 +88,7 @@ void handleRoot(){
   } 
   else 
   {
-    Distance = MeasureDistanceAvg();
+//    Distance = MeasureDistanceAvg();
     server.send ( 200, "text/html", getPage() );
   }  
 }
@@ -143,6 +156,13 @@ void setup() {
   
   pinMode(Trig, OUTPUT);
   pinMode(Echo, INPUT);
+  pinMode(Valve1, OUTPUT);
+  pinMode(Valve2, OUTPUT);
+
+  digitalWrite(Valve1, HIGH);
+  Valve1State = 1;
+  digitalWrite(Valve2, HIGH);
+  Valve2State = 1;
   // Initialisation du BMP180 / Init BMP180
 //  if ( !bmp.begin() ) {
 //    Serial.println("BMP180 KO!");
@@ -181,9 +201,27 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  Distance = MeasureDistanceAvg();
+  if(Distance > 32)  //turn valve ON
+  {
+    digitalWrite(Valve1, LOW);
+    digitalWrite(Valve2, LOW);
+    Valve1State = 0;
+    Valve2State = 0;
+    Serial.print ( F("Distance > 30, Valves ON : ") ); Serial.print(Valve1State); Serial.print ( F(" : ") ); Serial.println(Valve2State);
+  }
+  else if(Distance < 30)  //turn valve OFF
+  {
+    digitalWrite(Valve1, HIGH);
+    digitalWrite(Valve2, HIGH);
+    Valve1State = 1;
+    Valve2State = 1;
+    Serial.print ( F("Distance < 30, Valves OFF : ") ); Serial.print(Valve1State); Serial.print ( F(" : ") ); Serial.println(Valve2State);
+  }
   
 //  t = dht.readTemperature();
 //  h = dht.readHumidity();
 //  p = bmp.readPressure() / 100.0F;
-  delay(1000);
+  delay(100);
 }
