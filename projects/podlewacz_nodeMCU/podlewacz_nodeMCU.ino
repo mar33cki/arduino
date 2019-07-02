@@ -29,7 +29,7 @@
 #define OUTPUTS 4 //max loop index
 #define StartHour 07
 #define StartMinute 00
-#define WateringTime 2
+#define WateringTime 10
 
 int StartWatering = 0, CurrentTimer = 0, ind =0;
 int relays[OUTPUTS+1] = {D0, D1, D2, D3};
@@ -40,8 +40,8 @@ const char *ssid     = "Averna Guest";
 const char *password = "Averna2.0WelcomeU";
 
 WiFiUDP ntpUDP;
-int hour, minute, TimerMinutes = 0;
-int previousMinute = 0;
+int hour, minute;
+unsigned long  TimerMinutes = 0, previousMinute = 0;
 
 //europe server, utcOffsetInSeconds (+1:3600, +2:7200), updateInterval (10s)
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7200, 60000);
@@ -78,18 +78,18 @@ void watering()
     StartWatering = 1;
     CurrentTimer = TimerMinutes + WateringTime;
     ind = 0;
-    digitalWrite(relays[ind], LOW); //relay ON
+    digitalWrite(relays[ind], LOW); //section0 relay ON
     ind++;
-    digitalWrite(relays[ind], LOW); //relay ON
+    digitalWrite(relays[ind], LOW); //section1 relay ON
     Serial.print(F("Time for watering!, section = 0, 3, Wait for ")); Serial.println(CurrentTimer);
   }
 
  //watering on-going - iterate over the sections (relays)
  if( StartWatering && CurrentTimer == TimerMinutes && ind != OUTPUTS)
  {   
-   digitalWrite(relays[ind], HIGH); //relay OFF
+   digitalWrite(relays[ind], HIGH); //running relay OFF
    ind++;
-   digitalWrite(relays[ind], LOW);  //relay ON
+   digitalWrite(relays[ind], LOW);  //next relay ON
    CurrentTimer = TimerMinutes + WateringTime;
    Serial.print(F("section = ")); Serial.print(ind); Serial.print(F(", Wait for ")); Serial.println(CurrentTimer);
  }
@@ -97,7 +97,7 @@ void watering()
  //stop the watering
  else if(ind == OUTPUTS)
  {
-  for(int i = 0; i < OUTPUTS; i++) digitalWrite(relays[i], HIGH); //relays OFF
+  for(int i = 0; i < OUTPUTS; i++) digitalWrite(relays[i], HIGH); //all relays OFF
   StartWatering = 0;
   Serial.println(F("Stop the watering! "));
   ind = 0;
