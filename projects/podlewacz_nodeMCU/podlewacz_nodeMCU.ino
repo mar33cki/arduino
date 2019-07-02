@@ -3,11 +3,11 @@
  * it works on specified StartHour:StartMinute, launching each section for WateringTime
  * last section is enabled with section 0, and set off when last section is off
  * it is intended for drop watering
- * section0|
- * section3---------------------------| drop
- *          |section1|
- *                   |section2|
- *                            |all off|
+ * section0---------------------------| drop valve
+ * section3|                            watering valve
+ *          |section1|                  watering valve
+ *                   |section2|         watering valve
+ *                            |all off| watering valve
 */
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
@@ -26,16 +26,18 @@
 #define D9 3 // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
-#define OUTPUTS 3 //max loop index
-#define StartHour 18
-#define StartMinute 44
+#define OUTPUTS 4 //max loop index
+#define StartHour 07
+#define StartMinute 00
 #define WateringTime 2
 
 int StartWatering = 0, CurrentTimer = 0, ind =0;
 int relays[OUTPUTS+1] = {D0, D1, D2, D3};
+int ForceWatering = D5; //user button to force the watering
+int ForceWateringState = 0, PreviousForceWateringState = 0; //user button state
 
-const char *ssid     = "ssid";
-const char *password = "pass";
+const char *ssid     = "Averna Guest";
+const char *password = "Averna2.0WelcomeU";
 
 WiFiUDP ntpUDP;
 int hour, minute, TimerMinutes = 0;
@@ -54,36 +56,48 @@ void Timer()
   { 
     previousMinute = minute; //save current minute
     TimerMinutes++;         //increment timer
+
+    //toggle the LED_BUILTIN
+    if(TimerMinutes%2) digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+    else digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
     
-    Serial.print(hour); Serial.print(F(":")); Serial.print(minute);
+    Serial.print(F("Time: "));Serial.print(hour); Serial.print(F(":")); Serial.print(minute);
     Serial.print(F("; TimerMinutes: ")); Serial.println(TimerMinutes);
   }
 }
 
 void watering()
 {
-  if( hour == StartHour && minute == StartMinute && StartWatering == 0) 
+  ForceWateringState = digitalRead(ForceWatering);
+  if(PreviousForceWateringState != ForceWateringState) { Serial.print(F("ForceWateringState: ")); Serial.println(ForceWateringState);}
+  PreviousForceWateringState = ForceWateringState;
+
+  //wait for StartHour:StartMinute and StartWatering or for user button ForceWateringState
+  if( (hour == StartHour && minute == StartMinute && StartWatering == 0) || ForceWateringState == 0)
   { 
     StartWatering = 1;
     CurrentTimer = TimerMinutes + WateringTime;
     ind = 0;
-    digitalWrite(relays[ind], LOW);
-    digitalWrite(relays[OUTPUTS], LOW);
+    digitalWrite(relays[ind], LOW); //relay ON
+    ind++;
+    digitalWrite(relays[ind], LOW); //relay ON
     Serial.print(F("Time for watering!, section = 0, 3, Wait for ")); Serial.println(CurrentTimer);
   }
 
+ //watering on-going - iterate over the sections (relays)
  if( StartWatering && CurrentTimer == TimerMinutes && ind != OUTPUTS)
  {   
-   digitalWrite(relays[ind], HIGH);
+   digitalWrite(relays[ind], HIGH); //relay OFF
    ind++;
-   digitalWrite(relays[ind], LOW);
+   digitalWrite(relays[ind], LOW);  //relay ON
    CurrentTimer = TimerMinutes + WateringTime;
    Serial.print(F("section = ")); Serial.print(ind); Serial.print(F(", Wait for ")); Serial.println(CurrentTimer);
  }
+ 
+ //stop the watering
  else if(ind == OUTPUTS)
  {
-  digitalWrite(relays[ind], LOW);
-  digitalWrite(relays[OUTPUTS], LOW);
+  for(int i = 0; i < OUTPUTS; i++) digitalWrite(relays[i], HIGH); //relays OFF
   StartWatering = 0;
   Serial.println(F("Stop the watering! "));
   ind = 0;
@@ -93,10 +107,11 @@ void watering()
 void setup(){
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(ForceWatering, INPUT_PULLUP);
   for(int i = 0; i < OUTPUTS; i++) 
   { 
     pinMode(relays[i], OUTPUT);
-    digitalWrite(relays[i], HIGH);
+    digitalWrite(relays[i], HIGH); //relays OFF
   }
 
   WiFi.begin(ssid, password);
