@@ -36,8 +36,8 @@ int relays[OUTPUTS+1] = {D0, D1, D2, D3};
 int ForceWatering = D5; //user button to force the watering
 int ForceWateringState = 0, PreviousForceWateringState = 0; //user button state
 
-const char *ssid     = "Averna Guest";
-const char *password = "Averna2.0WelcomeU";
+const char *ssid     = "ssid";
+const char *password = "pass";
 
 WiFiUDP ntpUDP;
 int hour, minute;
