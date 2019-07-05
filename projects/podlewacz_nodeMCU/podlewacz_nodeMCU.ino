@@ -12,6 +12,8 @@
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
+#include <ArduinoJson.h>
+
 
 #define LED_BUILTIN D4
 #define D0 16
@@ -30,9 +32,10 @@
 #define StartHour 07
 #define StartMinute 00
 #define WateringTime 10
+#define JSON_BUFF_DIMENSION 2500
 
-int StartWatering = 0, CurrentTimer = 0, ind =0;
-int relays[OUTPUTS+1] = {D0, D1, D2, D3};
+int StartWatering = 0, CurrentTimer = 0, ind =0, AllowWatering = 0;
+int relays[OUTPUTS] = {D0, D1, D2, D3};
 int ForceWatering = D5; //user button to force the watering
 int ForceWateringState = 0, PreviousForceWateringState = 0; //user button state
 
@@ -45,6 +48,14 @@ unsigned long  TimerMinutes = 0, previousMinute = 0;
 
 //europe server, utcOffsetInSeconds (+1:3600, +2:7200), updateInterval (10s)
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7200, 60000);
+
+WiFiClient client;
+// Open Weather Map API server name
+const char server[] = "api.openweathermap.org";
+// Replace the next line to match your city and 2 letter country code
+String idOfCity = "7531860"; 
+// Replace the next line with your API Key
+String apiKey = "1f41036a759d7b051e4d0338bbc40a07"; 
 
 void Timer()
 {
@@ -73,7 +84,7 @@ void watering()
   PreviousForceWateringState = ForceWateringState;
 
   //wait for StartHour:StartMinute and StartWatering or for user button ForceWateringState
-  if( (hour == StartHour && minute == StartMinute && StartWatering == 0) || ForceWateringState == 0)
+  if( (hour == StartHour && minute == StartMinute && StartWatering == 0 && AllowWatering = 1) || ForceWateringState == 0)
   { 
     StartWatering = 1;
     CurrentTimer = TimerMinutes + WateringTime;
@@ -104,6 +115,61 @@ void watering()
  }
 }
 
+// to request data from OWM
+void makehttpRequest() {
+  // close any connection before send a new request to allow client make connection to server
+  client.stop();
+
+  // if there's a successful connection:
+  if (client.connect(server, 80)) {
+    // Serial.println("connecting...");
+    // send the HTTP PUT request:
+    client.println("GET /data/2.5/forecast?id=" + idOfCity + "&APPID=" + apiKey + "&mode=json&units=metric&cnt=2 HTTP/1.1");
+    client.println("Host: api.openweathermap.org");
+    client.println("User-Agent: ArduinoWiFi/1.1");
+    client.println("Connection: close");
+    client.println();
+    
+    unsigned long timeout = millis();
+    while (client.available() == 0) {
+      if (millis() - timeout > 5000) {
+        Serial.println(">>> Client Timeout !");
+        client.stop();
+        return;
+      }
+    }
+    
+    char c = 0;
+    while (client.available()) {
+      c = client.read();
+      // since json contains equal number of open and close curly brackets, this means we can determine when a json is completely received  by counting
+      // the open and close occurences,
+      //Serial.print(c);
+      if (c == '{') {
+        startJson = true;         // set startJson true to indicate json message has started
+        jsonend++;
+      }
+      if (c == '}') {
+        jsonend--;
+      }
+      if (startJson == true) {
+        text += c;
+      }
+      // if jsonend = 0 then we have have received equal number of curly braces 
+      if (jsonend == 0 && startJson == true) {
+        parseJson(text.c_str());  // parse c string text in parseJson function
+        text = "";                // clear text string for the next time
+        startJson = false;        // set startJson to false to indicate that a new message has not yet started
+      }
+    }
+  }
+  else {
+    // if no connction was made:
+    Serial.println("connection failed");
+    return;
+  }
+}
+
 void setup(){
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -128,6 +194,8 @@ void setup(){
   timeClient.begin();
   Serial.print(F("Watering at: ")); Serial.print(StartHour); Serial.print(F(":")); Serial.print(StartMinute);
   Serial.print(F(" for ")); Serial.print(WateringTime); Serial.println(F(" min/section."));
+
+  text.reserve(JSON_BUFF_DIMENSION);
 }
 
 void loop() 
@@ -135,6 +203,7 @@ void loop()
   timeClient.update();
 
   Timer();
+  makehttpRequest();
   watering();
 
   delay(1000);
