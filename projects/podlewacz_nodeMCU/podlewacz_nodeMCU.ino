@@ -48,6 +48,20 @@ unsigned long  TimerMinutes = 0, previousMinute = 0;
 
 //europe server, utcOffsetInSeconds (+1:3600, +2:7200), updateInterval (10s)
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7200, 60000);
+String text;
+int jsonend = 0;
+boolean startJson = false;
+struct Weather_Data
+{
+  int weather_0_id;
+  const char* weather_0_main;
+  float main_temp;
+  int main_pressure;
+  int main_humidity;
+  float main_temp_min;
+  float main_temp_max;
+};
+Weather_Data Weather;
 
 WiFiClient client;
 // Open Weather Map API server name
@@ -57,6 +71,7 @@ String idOfCity = "7531860";
 // Replace the next line with your API Key
 String apiKey = "1f41036a759d7b051e4d0338bbc40a07"; 
 
+//---------------------------------------------------------------------
 void Timer()
 {
   //get network time
@@ -76,7 +91,7 @@ void Timer()
     Serial.print(F("; TimerMinutes: ")); Serial.println(TimerMinutes);
   }
 }
-
+//---------------------------------------------------------------------
 void watering()
 {
   ForceWateringState = digitalRead(ForceWatering);
@@ -84,7 +99,7 @@ void watering()
   PreviousForceWateringState = ForceWateringState;
 
   //wait for StartHour:StartMinute and StartWatering or for user button ForceWateringState
-  if( (hour == StartHour && minute == StartMinute && StartWatering == 0 && AllowWatering = 1) || ForceWateringState == 0)
+  if( (hour == StartHour && minute == StartMinute && StartWatering == 0 && AllowWatering == 1) || (ForceWateringState == 0) )
   { 
     StartWatering = 1;
     CurrentTimer = TimerMinutes + WateringTime;
@@ -114,7 +129,7 @@ void watering()
   ind = 0;
  }
 }
-
+//---------------------------------------------------------------------
 // to request data from OWM
 void makehttpRequest() {
   // close any connection before send a new request to allow client make connection to server
@@ -169,7 +184,45 @@ void makehttpRequest() {
     return;
   }
 }
+//---------------------------------------------------------------------
+//to parse json data recieved from OWM
+void parseJson(const char * jsonString) 
+{
+  //StaticJsonBuffer<4000> jsonBuffer;
+  const size_t bufferSize = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(6) + JSON_OBJECT_SIZE(13) + 410;
+  const size_t capacity = bufferSize;
+  DynamicJsonDocument jsonBuffer(capacity);
 
+//   // FIND FIELDS IN JSON TREE
+//  JsonObject& root = jsonBuffer.parseObject(jsonString);
+//  if (!root.success()) 
+//  {
+//    Serial.println("parseObject() failed");
+//    return;
+//  }
+  // Parse JSON object
+  DeserializationError error = deserializeJson(jsonBuffer, jsonString);
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
+    return;
+  }
+  
+  //JsonObject& root = jsonBuffer.parseObject(json);
+
+  //JsonObject& weather_0 = root["weather"][0];
+  Weather.weather_0_id = jsonBuffer["weather"]["id"]; // 800
+  Weather.weather_0_main = jsonBuffer["weather"]["main"].as<char*>(); // "Clear"
+  Serial.print(F("Weather_id: ")); Serial.print(Weather.weather_0_id); Serial.print(F("; ")); Serial.println(Weather.weather_0_main);
+
+  //JsonObject& main = root["main"];
+  Weather.main_temp = jsonBuffer["main"]["temp"]; // 20.47
+  Weather.main_pressure = jsonBuffer["main"]["pressure"]; // 1014
+  Weather.main_humidity = jsonBuffer["main"]["humidity"]; // 40
+  Weather.main_temp_min = jsonBuffer["main"]["temp_min"]; // 19.44
+  Weather.main_temp_max = jsonBuffer["main"]["temp_max"]; // 23.33
+}
+//---------------------------------------------------------------------
 void setup(){
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -197,7 +250,7 @@ void setup(){
 
   text.reserve(JSON_BUFF_DIMENSION);
 }
-
+//---------------------------------------------------------------------
 void loop() 
 {
   timeClient.update();
