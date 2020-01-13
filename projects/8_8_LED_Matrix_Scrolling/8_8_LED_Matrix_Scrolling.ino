@@ -2,6 +2,7 @@
       8x8 LED Matrix MAX7219 Scrolling Text Example
    Based on the following library:
    GitHub | riyas-org/max7219  https://github.com/riyas-org/max7219
+   https://howtomechatronics.com/tutorials/arduino/8x8-led-matrix-max7219-tutorial-scrolling-text-android-control-via-bluetooth/
 */
 #include <MaxMatrix.h>
 #include <avr/pgmspace.h>

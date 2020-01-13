@@ -3,6 +3,7 @@
    by Dejan Nedelkovski, www.HowToMechatronics.com
    Based on the following library:
    GitHub | riyas-org/max7219  https://github.com/riyas-org/max7219
+   https://howtomechatronics.com/tutorials/arduino/8x8-led-matrix-max7219-tutorial-scrolling-text-android-control-via-bluetooth/
 */
 #include <MaxMatrix.h>
 int DIN = 7;   // DIN pin of MAX7219 module
