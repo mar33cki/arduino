@@ -119,11 +119,19 @@ void setup(){
   while ( WiFi.status() != WL_CONNECTED ) 
   {
     digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay ( 500 );
+    delay ( 200 );
     Serial.print ( F(".") );
     digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+    delay(200);
   }
   Serial.println(F("Connected!"));
+  for (int i=0; i<3; i++)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
 
   timeClient.begin();
   Serial.print(F("Watering at: ")); Serial.print(StartHour); Serial.print(F(":")); Serial.print(StartMinute);
