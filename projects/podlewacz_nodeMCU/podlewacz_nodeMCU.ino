@@ -6,7 +6,7 @@
  * section0---------------------------| drop valve
  * section3|                            watering valve
  *          |section1|                  watering valve
- *                   |section2|         watering valve
+ *                   |sectionN|         watering valve
  *                            |all off| watering valve
 */
 #include <NTPClient.h>
@@ -28,26 +28,26 @@
 #define D9 3 // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
-#define OUTPUTS 4 //max loop index
-#define StartHour 14
-#define StartMinute 05
+#define OUTPUTS 6 //max loop index
+#define StartHour 6
+#define StartMinute 30
 #define WateringTime 10
-#define JSON_BUFF_DIMENSION 2500
+#define JSON_BUFF_DIMENSION 5000
 
 int StartWatering = 0, CurrentTimer = 0, ind =0, AllowWatering = 0;
-int relays[OUTPUTS] = {D0, D1, D2, D3};
-int ForceWatering = D5; //user button to force the watering
+int relays[OUTPUTS] = {D0, D1, D2, D3, D5, D6}; //skip D4 LED_BUILDIN!
+int ForceWatering = D7; //user button to force the watering
 int ForceWateringState = 0, PreviousForceWateringState = 0; //user button state
 
 const char *ssid     = "ssid";
-const char *password = "password";
+const char *password = "pass";
 
 WiFiUDP ntpUDP;
 int hour, minute;
 unsigned long  TimerMinutes = 0, previousMinute = 0;
 
 //europe server, utcOffsetInSeconds (+1:3600, +2:7200), updateInterval (10s)
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7200, 60000);
 String text;
 int jsonend = 0;
 boolean startJson = false;
@@ -100,18 +100,34 @@ void watering()
   PreviousForceWateringState = ForceWateringState;
 
   //verify actual weather
-  if(hour == StartHour && minute == StartMinute && Weather.actual == 0) makehttpRequest();
+  if(hour == StartHour && minute == StartMinute && Weather.actual == 0)
+  {
+    Serial.println(F("Weather conditions check"));
+    makehttpRequest();
+    if (Weather.weather_0_id >= 700 && Weather.main_temp >= 3)
+    {
+      AllowWatering = 1;
+      Serial.println(F("Weather conditions PASS -> AllowWatering = 1"));
+    }
+    else
+    {
+      AllowWatering = 0;
+      Serial.println(F("Weather conditions FAIL -> AllowWatering = 0"));
+    }    
+  }
 
   //wait for StartHour:StartMinute and StartWatering or for user button ForceWateringState
-  if( (hour == StartHour && minute == StartMinute && StartWatering == 0 && AllowWatering == 1 && Weather.weather_0_id >= 800) || (ForceWateringState == 0) )
+  if( ( AllowWatering == 1) || (ForceWateringState == 0) )
   { 
+    Serial.print(F(" AllowWatering: ")); Serial.print(AllowWatering); Serial.print(F(" ForceWateringState: ")); Serial.print(ForceWateringState); Serial.print(F(" check: ")); Serial.println(( AllowWatering == 1) || (ForceWateringState == 0));
+    AllowWatering = 0;
     StartWatering = 1;
     CurrentTimer = TimerMinutes + WateringTime;
     ind = 0;
     digitalWrite(relays[ind], LOW); //section0 relay ON
     ind++;
     digitalWrite(relays[ind], LOW); //section1 relay ON
-    Serial.print(F("Time for watering!, section = 0, 3, Wait for ")); Serial.println(CurrentTimer);
+    Serial.print(F("Time for watering!, section = 0, 1, Wait for ")); Serial.println(CurrentTimer);
   }
 
  //watering on-going - iterate over the sections (relays)
@@ -121,7 +137,7 @@ void watering()
    ind++;
    digitalWrite(relays[ind], LOW);  //next relay ON
    CurrentTimer = TimerMinutes + WateringTime;
-   Serial.print(F("section = ")); Serial.print(ind); Serial.print(F(", Wait for ")); Serial.println(CurrentTimer);
+   Serial.print(F("section = ")); Serial.print(ind); Serial.print(F(", Wait for time equal ")); Serial.println(CurrentTimer);
  }
  
  //stop the watering
@@ -133,6 +149,7 @@ void watering()
   ind = 0;
   Weather.actual = 0;
  }
+// Serial.print(F("ind = ")); Serial.println(ind);
 }
 //---------------------------------------------------------------------
 // to request data from OWM
@@ -140,6 +157,9 @@ void makehttpRequest() {
   // close any connection before send a new request to allow client make connection to server
   client.stop();
 
+  Serial.println();
+  Serial.println(F("-----------------------"));
+  Serial.println(F("makehttpRequest started"));
   Serial.print(server); Serial.print(F("/data/2.5/weather?id=")); Serial.print(idOfCity); Serial.print(F("&APPID=")); Serial.print(apiKey); Serial.println(F("&mode=json&units=metric&cnt=2"));
   // if there's a successful connection:
   if (client.connect(server, 80)) 
@@ -163,6 +183,8 @@ void makehttpRequest() {
     }
     
     char c = 0;
+    jsonend = 0;
+    startJson = false;
     text = "";  // clear text string for the next time
     while (client.available()) 
     {
@@ -187,13 +209,19 @@ void makehttpRequest() {
         text = "";                // clear text string for the next time
         startJson = false;        // set startJson to false to indicate that a new message has not yet started
       }
+      //FIX by delay
+      delay(5); //need to wait a bit to get full http request otherwise will exit without full answer
     }
+    Serial.println(); Serial.print(F("(jsonend: ")); Serial.print(jsonend); Serial.print(F("; startJson: ")); Serial.print(startJson); Serial.print(F(")"));
   }
   else {
     // if no connction was made:
     Serial.println("connection failed");
     return;
   }
+  Serial.println();
+  Serial.println(F("makehttpRequest ended"));
+  Serial.println(F("-----------------------"));
 }
 //---------------------------------------------------------------------
 //to parse json data recieved from OWM
@@ -245,6 +273,10 @@ void parseJson(const char * jsonString)
 //---------------------------------------------------------------------
 void setup(){
   Serial.begin(115200);
+  Serial.println();
+  Serial.println(F("=========================="));
+  Serial.println(F("NodeMCU watering device"));
+  Serial.println();
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(ForceWatering, INPUT_PULLUP);
   for(int i = 0; i < OUTPUTS; i++) 
@@ -279,5 +311,5 @@ void loop()
   //makehttpRequest();
   watering();
 
-  delay(1000);
+  delay(500);
 }
