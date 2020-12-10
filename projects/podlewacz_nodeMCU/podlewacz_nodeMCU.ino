@@ -28,19 +28,20 @@
 #define D9 3 // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
-#define OUTPUTS 6 //max loop index
-#define StartHour 6
-#define StartMinute 30
+#define OUTPUTS 4 //max loop index
+#define StartHour 7
+#define StartMinute 00
 #define WateringTime 10
 #define JSON_BUFF_DIMENSION 5000
 
 int StartWatering = 0, CurrentTimer = 0, ind =0, AllowWatering = 0;
-int relays[OUTPUTS] = {D0, D1, D2, D3, D5, D6}; //skip D4 LED_BUILDIN!
+//int relays[OUTPUTS] = {D0, D1, D2, D3, D5, D6}; //skip D4 LED_BUILDIN!
+int relays[OUTPUTS] = {D0, D1, D2, D3}; //skip D4 LED_BUILDIN!
 int ForceWatering = D7; //user button to force the watering
 int ForceWateringState = 0, PreviousForceWateringState = 0; //user button state
 
-const char *ssid     = "ssid";
-const char *password = "pass";
+const char *ssid     = "marecki2";
+const char *password = "12345qwerty";
 
 WiFiUDP ntpUDP;
 int hour, minute;
@@ -290,9 +291,10 @@ void setup(){
   while ( WiFi.status() != WL_CONNECTED ) 
   {
     digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay ( 500 );
+    delay ( 300 );
     Serial.print ( F(".") );
     digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+    delay ( 300 );
   }
   Serial.println(F("Wi-Fi Connected!"));
 
