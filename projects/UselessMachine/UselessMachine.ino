@@ -1,8 +1,9 @@
 /*
- * this is to control useless box 
+ * this is to control useless machine 
+ * where the servo position 180 is on the switch limit
  * on Arduino nano, where:
- * switch: Pin 2
- * LED: Pin 3
+ * switch: Pin 2 and GND
+ * LED: Pin 3 and Vcc
  * servo: pin 9
  */
 #include <Servo.h>
@@ -51,6 +52,7 @@ void OpenSwitch()
   Serial.print(F("OpenSwitch: counter: "));
   Serial.println(counter);
 
+
   if(counter < 3)
   {
     // 1
@@ -60,9 +62,11 @@ void OpenSwitch()
     myservo.write(90);
     digitalWrite(LEDPin, HIGH);
   } 
+  else if(counter > 50) counter = 0;
   else
   { 
-    randNum = random(1,7);
+    randNum = random(1,17); //generate random number to choose how to proceed
+  //randNum = 16;
     
     switch(randNum)
     {
@@ -158,8 +162,132 @@ void OpenSwitch()
         myservo.write(90);
         delay(100);
       break;
+
+      case 8:
+        myservo.write(180);
+        delay(300);
+        myservo.write(0);
+        delay(300);
+        myservo.write(90);
+        delay(300);
+      break;
+
+      case 9:
+        myservo.write(135);
+        delay(200);
+        myservo.write(90);
+        delay(200);
+        myservo.write(180);
+        delay(300);
+        myservo.write(90);
+        delay(100);
+      break;
+
+      case 10:
+        myservo.write(135);
+        delay(200);
+        myservo.write(0);
+        delay(300);
+        myservo.write(180);
+        delay(300);
+        myservo.write(90);
+        delay(100);
+      break;
+
+      case 11:
+        myservo.write(0);
+        delay(300);
+        for(i=0; i<6; i++)
+        {
+          myservo.write((i+1)*30);
+          delay(random(50,300));
+        }
+        myservo.write(90);
+        delay(200);
+      break;
+
+      case 12:
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(200);
+        digitalWrite(LED_BUILTIN, LOW);
+        myservo.write(140);
+        delay(200);
+        myservo.write(180);
+        delay(200);
+        myservo.write(150);
+        delay(200);
+        for(i=0; i<3; i++)
+        {
+          digitalWrite(LED_BUILTIN, HIGH);
+          delay(200);
+          digitalWrite(LED_BUILTIN, LOW);
+          delay(200);
+        }
+        myservo.write(90);
+        delay(200);
+      break;
+
+      case 13:
+        myservo.write(135);
+        delay(300);
+        myservo.write(0);
+        delay(300);
+        myservo.write(180);
+        delay(300);
+        myservo.write(90);
+        delay(100);
+      break;
+
+      case 14:
+        myservo.write(0);
+        delay(350);
+        myservo.write(140);
+        delay(350);
+        myservo.write(0);
+        delay(400);
+        myservo.write(50);
+        delay(200);
+        myservo.write(0);
+        delay(420);
+        myservo.write(180);
+        delay(300);;
+        myservo.write(90);
+        delay(100);
+      break;
+
+      case 15:
+        for(i=0; i<6; i++)
+        {
+          myservo.write(random(0,130));
+          delay(random(150,300));
+        }
+        digitalWrite(LEDPin, LOW);
+        myservo.write(180);
+        delay(300);;
+        myservo.write(90);
+        digitalWrite(LEDPin, HIGH);
+        delay(100);
+      break;
+
+      case 16:
+        for(i=0; i<6; i++)
+        {
+          digitalWrite(LED_BUILTIN, HIGH);
+          myservo.write(random(0,140));
+          delay(random(50,300));
+          digitalWrite(LED_BUILTIN, LOW);
+          delay(random(50,100));
+        }
+        myservo.write(180);
+        delay(300);
+        myservo.write(90);
+        digitalWrite(LEDPin, LOW);
+        delay(100);
+        digitalWrite(LEDPin, HIGH);
+      break;
+      
     }
-  }
+  }  
 }
 //-------------------------------------
 void setup() {
@@ -175,19 +303,22 @@ void setup() {
   for(int i = 0; i < 2; i++)
   {
     digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LEDPin, LOW);
     delay(300);
     digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(LEDPin, HIGH);
     delay(300);
   }
   pinMode(SwitchPin, INPUT_PULLUP);
 
   myservo.attach(ServoPin);  // attaches the servo on pin 9 to the servo object
-  //myservo.write(-90);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  
   CheckSwitch();
+  
   if(switchchange)
   {
     OpenSwitch();
