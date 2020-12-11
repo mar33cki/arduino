@@ -44,18 +44,122 @@ void CheckSwitch()
 //-------------------------------------
 void OpenSwitch()
 {
+  int i=0;
+  int randNum;
   counter++; //increment counter
 
   Serial.print(F("OpenSwitch: counter: "));
   Serial.println(counter);
 
-
- // myservo.write(val);                  // sets the servo position according to the scaled value
-  digitalWrite(LEDPin, LOW);
-  myservo.write(servoSteps);
-  delay(500);
-  myservo.write(-servoSteps);
-  digitalWrite(LEDPin, HIGH);
+  if(counter < 3)
+  {
+    // 1
+    digitalWrite(LEDPin, LOW);
+    myservo.write(180);
+    delay(500);
+    myservo.write(90);
+    digitalWrite(LEDPin, HIGH);
+  } 
+  else
+  { 
+    randNum = random(1,7);
+    
+    switch(randNum)
+    {
+      case 1:
+        digitalWrite(LED_BUILTIN, HIGH);
+        myservo.write(180);
+        delay(400);
+        myservo.write(90);
+        digitalWrite(LED_BUILTIN, LOW);
+      break;
+      
+      case 2:  
+        // 2
+        digitalWrite(LEDPin, LOW);
+        myservo.write(180);
+        for(i=0; i<3; i++)
+        {
+          digitalWrite(LEDPin, LOW);
+          delay(200);
+          digitalWrite(LEDPin, HIGH);
+          delay(200);
+        }
+        delay(1000);
+        myservo.write(90);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(300);
+        digitalWrite(LED_BUILTIN, LOW);
+      break;
+    
+      case 3:
+        myservo.write(0);
+        delay(200);
+        digitalWrite(LEDPin, LOW);
+        myservo.write(180);
+        delay(400);
+        myservo.write(90);
+        delay(200);
+        digitalWrite(LEDPin, HIGH);
+      break;
+    
+      case 4:
+        myservo.write(0);
+        digitalWrite(LED_BUILTIN, HIGH);
+        myservo.write(50);
+        delay(200);
+        digitalWrite(LED_BUILTIN, LOW);
+        myservo.write(180);
+        delay(400);
+        myservo.write(90);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(200);
+        digitalWrite(LEDPin, HIGH);
+        digitalWrite(LED_BUILTIN, LOW);
+      break;
+    
+      case 5:
+        digitalWrite(LED_BUILTIN, HIGH);
+        for(i=0; i<3; i++)
+        {
+            myservo.write(180);
+            delay(300);
+            myservo.write(90);
+            delay(250);
+        }
+        digitalWrite(LED_BUILTIN, LOW);
+      break;
+      
+      case 6:
+        myservo.write(0);
+        delay(200);
+        myservo.write(90);
+        delay(200);
+        myservo.write(0);
+        delay(200);
+        myservo.write(180);
+        delay(300);
+        myservo.write(90);
+        delay(100);
+      break;
+      
+      case 7:      
+        myservo.write(0);
+        delay(200);
+        for(i=0; i<2; i++)
+        {
+          myservo.write(50);
+          delay(200);
+          myservo.write(0);
+          delay(200);
+        }
+        myservo.write(180);
+        delay(400);
+        myservo.write(90);
+        delay(100);
+      break;
+    }
+  }
 }
 //-------------------------------------
 void setup() {
@@ -67,10 +171,18 @@ void setup() {
 
   pinMode(LEDPin, OUTPUT);
   digitalWrite(LEDPin, HIGH);
+  pinMode(LED_BUILTIN, OUTPUT);
+  for(int i = 0; i < 2; i++)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(300);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(300);
+  }
   pinMode(SwitchPin, INPUT_PULLUP);
 
   myservo.attach(ServoPin);  // attaches the servo on pin 9 to the servo object
-  myservo.write(-90);
+  //myservo.write(-90);
 }
 
 void loop() {
